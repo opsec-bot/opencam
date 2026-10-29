@@ -9,6 +9,7 @@ query tight and the timeout honest.
 from __future__ import annotations
 
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -17,8 +18,11 @@ from typing import Optional
 
 from ..normalize import make_record, parse_direction
 
-# Public instance. Overridable for a mirror or a local Overpass.
-DEFAULT_ENDPOINT = "https://overpass-api.de/api/interpreter"
+# Public instance by default. Set OPENCAM_OVERPASS_ENDPOINT to a mirror or a
+# local Overpass when the public server rate-limits you (e.g. from CI, whose
+# shared IPs overpass-api.de throttles hard).
+DEFAULT_ENDPOINT = os.environ.get(
+    "OPENCAM_OVERPASS_ENDPOINT", "https://overpass-api.de/api/interpreter")
 
 # One record's worth of trust from a single OSM confirmation. DeFlock agreement
 # or a municipal portal later pushes this up during dedupe.

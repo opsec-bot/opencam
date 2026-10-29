@@ -10,13 +10,13 @@ on:
         required: false
         default: ""
 
+# Pages is served from the gh-pages branch, so this job commits the freshly
+# built dataset there. It needs write access to push that branch.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: build-and-publish
   cancel-in-progress: false
 
 jobs:
@@ -30,11 +30,15 @@ jobs:
           python-version: "3.12"
 
       - name: Build packs
+        env:
+          # Set repo variable OPENCAM_OVERPASS_ENDPOINT to a mirror if the
+          # public Overpass server rate-limits the runner.
+          OPENCAM_OVERPASS_ENDPOINT: ${{ vars.OPENCAM_OVERPASS_ENDPOINT }}
         run: |
           BASE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
           python -m opencam.build --out dist --base-url "$BASE" --regions ${{ github.event.inputs.regions }}
 
-      - name: Show manifest summary
+      - name: Summary
         run: |
           python - <<'PY'
           import json
@@ -43,16 +47,14 @@ jobs:
           print(f"{len(m['regions'])} regions, {total} cameras, generated {m['generatedAt']}")
           PY
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish dataset to gh-pages
+        run: |
+          cd dist
+          touch .nojekyll
+          git init -q
+          git checkout -q -b gh-pages
+          git config user.name "opencam-bot"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -q -m "Rebuild dataset $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
