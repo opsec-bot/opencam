@@ -19,12 +19,17 @@ import time
 from . import __version__
 from .dedupe import dedupe
 from .packs import build_packs
-from .sources import osm
+from .sources import mobile, municipal, osm
 
 # Source registry. Each value is a fetch_region(region_id, bbox) callable.
-# Adding DeFlock / municipal portals later is one entry each.
+#   osm       - global base layer, all 50 states (OSM via Overpass)
+#   municipal - cities' own authoritative feeds, independent of OSM
+#   mobile    - community-reported mobile ALPRs OSM can't hold
+# Adding a source is one entry here plus its module in sources/.
 SOURCES = {
     "osm": osm.fetch_region,
+    "municipal": municipal.fetch_region,
+    "mobile": mobile.fetch_region,
 }
 
 _REGIONS_PATH = os.path.join(os.path.dirname(__file__), "regions.json")

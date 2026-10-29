@@ -15,11 +15,36 @@ schedule, multi-source, with provenance on every record.
 
 ## Data sources
 
-| Source | Covers | License |
-| --- | --- | --- |
-| OpenStreetMap (Overpass) | speed, red-light, ALPR worldwide | ODbL |
-| DeFlock *(planned)* | Flock / ALPR, crowd-sourced | ODbL |
-| US municipal open-data portals *(planned)* | authoritative fixed cameras | varies, open |
+| Source | Covers | Independent of OSM? | License |
+| --- | --- | --- | --- |
+| OpenStreetMap (Overpass) | speed, red-light, ALPR — all 50 states, base layer | — | ODbL |
+| Municipal open-data portals | a city's own authoritative camera list | **yes** | varies, open |
+| Mobile ALPR (`data/mobile_lprs.json`) | trailer / construction Flock units OSM can't hold | **yes** | opencam, open |
+
+OSM is the broad base layer. The municipal and mobile layers are the
+*independent* cross-check: when a city feed and OSM both place a camera at the
+same spot, dedupe unions their sources and lifts the record's confidence (seen
+live in Illinois, where city + OSM agreement pushes matches to `confidence 1.0`).
+
+> **Note on DeFlock:** DeFlock is **not** a separate source. It syncs its reports
+> *into* OSM, and its data repos are built from Overpass, so pulling it would
+> just re-fetch what we already get from OSM. Re-serving one feed as two isn't
+> cross-validation. The genuine independent layer is municipal open data.
+
+### Scaling to more cities
+
+There are hundreds of municipal portals. Most run Socrata, which has one
+cross-domain catalog, so `opencam.discover` finds candidate camera-location
+datasets nationwide and prints the `host` + `dataset` id to vet:
+
+```bash
+python -m opencam.discover --query "speed camera locations"
+```
+
+Confirm a candidate has lat/lon, then add one `SocrataFeed` line to
+[`opencam/sources/municipal.py`](opencam/sources/municipal.py). Verified today:
+Chicago (speed + red-light), Prince George's County MD (speed). ArcGIS-based
+portals are the next adapter.
 
 Nothing here is scraped from a closed service. See
 [`ATTRIBUTION.md`](ATTRIBUTION.md).
