@@ -18,7 +18,9 @@ schedule, multi-source, with provenance on every record.
 | Source | Covers | Independent of OSM? | License |
 | --- | --- | --- | --- |
 | OpenStreetMap (Overpass) | speed, red-light, ALPR — all 50 states, base layer | — | ODbL |
-| Municipal open-data portals | a city's own authoritative camera list | **yes** | varies, open |
+| Municipal Socrata portals | a city's own authoritative camera list | **yes** | varies, open |
+| ArcGIS FeatureServer portals | city/state camera layers not on Socrata | **yes** | varies, open |
+| Scraped gov pages (sitescrape) | governments with a website but no data API | **yes** | public records |
 | Mobile ALPR (`data/mobile_lprs.json`) | trailer / construction Flock units OSM can't hold | **yes** | opencam, open |
 
 OSM is the broad base layer. The municipal and mobile layers are the
@@ -41,10 +43,22 @@ datasets nationwide and prints the `host` + `dataset` id to vet:
 python -m opencam.discover --query "speed camera locations"
 ```
 
-Confirm a candidate has lat/lon, then add one `SocrataFeed` line to
-[`opencam/sources/municipal.py`](opencam/sources/municipal.py). Verified today:
-Chicago (speed + red-light), Prince George's County MD (speed). ArcGIS-based
-portals are the next adapter.
+Confirm a candidate has lat/lon, then add one feed line to the named module:
+[`municipal.py`](opencam/sources/municipal.py) for Socrata,
+[`arcgis.py`](opencam/sources/arcgis.py) for ArcGIS. Verified today: Chicago
+(speed + red-light), Prince George's County MD (speed), Maryland statewide
+(speed), Baltimore (red-light + portable speed).
+
+### Governments with no data API
+
+Some jurisdictions only have a web page, no Socrata or ArcGIS. For those,
+opencam reaches through our own [sitescrape](https://github.com/opsec-bot/sitescrape)
+tool, which turns a page's own frontend requests into a typed endpoint. opencam
+stays pure Python and calls sitescrape only when it's installed and a feed is
+configured (see [`opencam/sources/scraped.py`](opencam/sources/scraped.py)).
+
+**Public government pages only.** sitescrape is never pointed at a closed or
+commercial service here — that's the line that keeps opencam clean (below).
 
 Nothing here is scraped from a closed service. See
 [`ATTRIBUTION.md`](ATTRIBUTION.md).
