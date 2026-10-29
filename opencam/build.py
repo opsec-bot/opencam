@@ -19,16 +19,18 @@ import time
 from . import __version__
 from .dedupe import dedupe
 from .packs import build_packs
-from .sources import mobile, municipal, osm
+from .sources import arcgis, mobile, municipal, osm
 
 # Source registry. Each value is a fetch_region(region_id, bbox) callable.
 #   osm       - global base layer, all 50 states (OSM via Overpass)
-#   municipal - cities' own authoritative feeds, independent of OSM
+#   municipal - cities' own Socrata feeds, independent of OSM
+#   arcgis    - cities'/states' ArcGIS FeatureServer feeds, independent of OSM
 #   mobile    - community-reported mobile ALPRs OSM can't hold
 # Adding a source is one entry here plus its module in sources/.
 SOURCES = {
     "osm": osm.fetch_region,
     "municipal": municipal.fetch_region,
+    "arcgis": arcgis.fetch_region,
     "mobile": mobile.fetch_region,
 }
 
